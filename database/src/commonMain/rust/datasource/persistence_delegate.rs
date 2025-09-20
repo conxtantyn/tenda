@@ -3,6 +3,7 @@ use serde_json::{ json, Value as JsonValue };
 use std::sync::{ Arc, Mutex };
 
 use crate::datasource::persistence::Persistence;
+use crate::exception::persistence_exception::PersistenceException;
 use crate::mapper::entry_mapper::EntryMapper;
 use crate::mapper::json_mapper::JsonMapper;
 use crate::model::entry::Entry;
@@ -15,7 +16,7 @@ impl Persistence {
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
-            .expect("Failed to create Tokio runtime");
+            .expect(PersistenceException::INITIALIZATION_EXCEPTION);
         Arc::new(Self {
             credential: Mutex::new(None),
             db: Mutex::new(None),
@@ -32,8 +33,8 @@ impl Persistence {
         *conn_guard = None;
         *db_guard = None;
 
-        let db = Database::open(&credential.database).expect("Failed to open database");
-        let conn = db.connect().expect("Failed to connect to database");
+        let db = Database::open(&credential.database).expect(PersistenceException::OPEN_EXCEPTION);
+        let conn = db.connect().expect(PersistenceException::CONNECTION_EXCEPTION);
 
         *cred_guard = Some(credential);
         *db_guard = Some(Arc::new(db));
@@ -47,7 +48,7 @@ impl Persistence {
         args: Vec<Entry>
     ) -> String {
         let conn_guard = self.connection.lock().unwrap();
-        let conn = conn_guard.as_ref().expect("Not connected to database");
+        let conn = conn_guard.as_ref().expect(PersistenceException::QUERY_EXCEPTION);
         let params = args.from_domain();
         self.runtime.block_on(async {
             if sql.trim().to_uppercase().starts_with("SELECT") {
@@ -71,15 +72,15 @@ impl Persistence {
 
     pub async fn synchronise(&self) {
         let conn_guard = self.credential.lock().unwrap();
-        let credential = conn_guard.as_ref().expect("No credential set");
+        let credential = conn_guard.as_ref().expect(PersistenceException::CREDENTIAL_EXCEPTION);
         let client = Database::open_remote(
             credential.url.clone(),
             credential.token.clone()
-        ).expect("Failed to open remote database");
+        ).expect(PersistenceException::REMOTE_CONNECTION_EXCEPTION);
         self.runtime.block_on(async {
             client.sync()
                 .await
-                .expect("Failed to synchronize with remote database");
+                .expect(PersistenceException::SYNC_EXCEPTION);
         });
     }
 

@@ -1,9 +1,11 @@
-mod model;
-mod mapper;
 mod datasource;
+mod exception;
+mod mapper;
+mod model;
 
-pub use model::*;
 pub use datasource::*;
+pub use exception::*;
+pub use model::*;
 
 #[allow(unused_imports)]
 pub(crate) use mapper::*;
