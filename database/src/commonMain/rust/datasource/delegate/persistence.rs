@@ -3,6 +3,8 @@ use libsql::{ Database, Value as LibSqlValue, Error as LibSqlError };
 use serde_json::{ json, Value as JsonValue };
 
 use crate::model::entry::Entry;
+use crate::mapper::json::JsonMapper;
+use crate::mapper::entry::EntryMapper;
 use crate::datasource::core::persistence::Persistence;
 
 #[uniffi::export]
@@ -42,16 +44,7 @@ impl Persistence {
     ) -> String {
         let conn_guard = self.connection.lock().unwrap();
         let conn = conn_guard.as_ref().expect("Not connected to database");
-        let mut params = Vec::new();
-        for arg in args {
-            let val = match arg {
-                Entry::Int(i) => LibSqlValue::Integer(i),
-                Entry::Real(f) => LibSqlValue::Real(f),
-                Entry::Text(s) => LibSqlValue::Text(s),
-                Entry::Null => LibSqlValue::Null,
-            };
-            params.push(val);
-        }
+        let mut params = args.from_domain();
         self.runtime.block_on(async {
             if sql.trim().to_uppercase().starts_with("SELECT") {
                 let mut rows = conn.query(&sql, params).await.unwrap();
@@ -60,14 +53,7 @@ impl Persistence {
                     let mut row_data = serde_json::Map::new();
                     for i in 0..row.column_count() {
                         let column_name = row.column_name(i).unwrap_or("").to_string();
-                        let value = match row.get_value(i).unwrap() {
-                            LibSqlValue::Null => JsonValue::Null,
-                            LibSqlValue::Integer(i) => json!(i),
-                            LibSqlValue::Real(f) => json!(f),
-                            LibSqlValue::Text(s) => json!(s),
-                            LibSqlValue::Blob(b) => json!(b),
-                        };
-                        row_data.insert(column_name, value);
+                        row_data.insert(column_name, row.get_value(i).unwrap().to_json());
                     }
                     results.push(JsonValue::Object(row_data));
                 }
