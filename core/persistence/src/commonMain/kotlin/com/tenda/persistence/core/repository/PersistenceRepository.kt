@@ -10,13 +10,13 @@ interface PersistenceRepository {
 
     suspend fun<T : Any> execute(
         sql: String,
-        kClass: KClass<T>
+        type: KClass<T>
     ): Response<T>
 
     suspend fun<T : Any> execute(
         sql: String,
         params: List<Any?>,
-        kClass: KClass<T>
+        type: KClass<T>
     ): Response<T>
 
     suspend fun close()
