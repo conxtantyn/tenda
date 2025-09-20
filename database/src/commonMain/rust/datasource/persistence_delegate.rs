@@ -65,6 +65,15 @@ impl Persistence {
         })
     }
 
+    pub async fn synchronise(&self, url: String, token: String) {
+        let client = Database::open_remote(url, token).expect("Failed to open remote database");
+        self.runtime.block_on(async {
+            client.sync()
+                .await
+                .expect("Failed to synchronize with remote database");
+        });
+    }
+
     pub fn disconnect(&self) {
         let mut db_guard = self.db.lock().unwrap();
         let mut conn_guard = self.connection.lock().unwrap();
