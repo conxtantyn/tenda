@@ -4,7 +4,11 @@ import com.tenda.persistence.core.model.Response
 import kotlin.reflect.KClass
 
 interface PersistenceRepository {
-    suspend fun open(database: String)
+    fun open(
+        url: String,
+        token: String,
+        database: String,
+    )
 
     suspend fun execute(sql: String, params: List<Any?> = emptyList()): String
 
@@ -19,5 +23,7 @@ interface PersistenceRepository {
         type: KClass<T>
     ): Response<T>
 
-    suspend fun close()
+    suspend fun synchronise()
+
+    fun close()
 }

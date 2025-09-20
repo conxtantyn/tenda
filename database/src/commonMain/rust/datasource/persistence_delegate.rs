@@ -6,6 +6,7 @@ use crate::datasource::persistence::Persistence;
 use crate::mapper::entry_mapper::EntryMapper;
 use crate::mapper::json_mapper::JsonMapper;
 use crate::model::entry::Entry;
+use crate::model::credential::Credential;
 
 #[uniffi::export]
 impl Persistence {
@@ -16,22 +17,25 @@ impl Persistence {
             .build()
             .expect("Failed to create Tokio runtime");
         Arc::new(Self {
+            credential: Mutex::new(None),
             db: Mutex::new(None),
             connection: Mutex::new(None),
             runtime,
         })
     }
 
-    pub async fn connect(&self, database_path: String) {
+    pub fn connect(&self, credential: Credential) {
+        let mut cred_guard = self.credential.lock().unwrap();
         let mut db_guard = self.db.lock().unwrap();
         let mut conn_guard = self.connection.lock().unwrap();
 
         *conn_guard = None;
         *db_guard = None;
 
-        let db = Database::open(&database_path).expect("Failed to open database");
+        let db = Database::open(&credential.database).expect("Failed to open database");
         let conn = db.connect().expect("Failed to connect to database");
 
+        *cred_guard = Some(credential);
         *db_guard = Some(Arc::new(db));
         *conn_guard = Some(conn);
     }
@@ -65,8 +69,13 @@ impl Persistence {
         })
     }
 
-    pub async fn synchronise(&self, url: String, token: String) {
-        let client = Database::open_remote(url, token).expect("Failed to open remote database");
+    pub async fn synchronise(&self) {
+        let conn_guard = self.credential.lock().unwrap();
+        let credential = conn_guard.as_ref().expect("No credential set");
+        let client = Database::open_remote(
+            credential.url.clone(),
+            credential.token.clone()
+        ).expect("Failed to open remote database");
         self.runtime.block_on(async {
             client.sync()
                 .await
@@ -75,9 +84,11 @@ impl Persistence {
     }
 
     pub fn disconnect(&self) {
+        let mut cred_guard = self.credential.lock().unwrap();
         let mut db_guard = self.db.lock().unwrap();
         let mut conn_guard = self.connection.lock().unwrap();
 
+        *cred_guard = None;
         *conn_guard = None;
         *db_guard = None;
     }

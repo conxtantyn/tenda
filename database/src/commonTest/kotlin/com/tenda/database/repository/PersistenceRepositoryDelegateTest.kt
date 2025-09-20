@@ -1,5 +1,6 @@
 package com.tenda.database.repository
 
+import com.tenda.database.mock.FakePersistence
 import com.tenda.persistence.core.repository.PersistenceRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -35,7 +36,7 @@ class PersistenceRepositoryDelegateTest {
     }
 
     @AfterTest
-    fun tearDown() = runTest {
+    fun tearDown() {
         repository.close()
         Dispatchers.resetMain()
     }
@@ -43,7 +44,11 @@ class PersistenceRepositoryDelegateTest {
     @Test
     fun `test database connection`() = testScope.runTest {
         val result = try {
-            repository.open(":memory:")
+            repository.open(
+                url = "http://<test-token>",
+                token = "<test-token>",
+                database = ":memory:"
+            )
         } catch (_: Throwable) {
             null
         }
@@ -60,14 +65,22 @@ class PersistenceRepositoryDelegateTest {
                 score REAL
             )
         """.trimIndent()
-        repository.open(":memory:")
+        repository.open(
+            url = "http://<test-token>",
+            token = "<test-token>",
+            database = ":memory:"
+        )
         val result = repository.execute(query)
         assertEquals(result.isEmpty(), false)
     }
 
     @Test
     fun `test execute select query`() = testScope.runTest {
-        repository.open(":memory:")
+        repository.open(
+            url = "http://<test-token>",
+            token = "<test-token>",
+            database = ":memory:"
+        )
         val createTable = """
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY,
@@ -100,6 +113,32 @@ class PersistenceRepositoryDelegateTest {
         assertEquals(selectedProfile.name, profile.name)
         assertEquals(selectedProfile.age, profile.age)
         assertEquals(selectedProfile.score, profile.score)
+    }
+
+    @Test
+    fun `test synchronise database`() = testScope.runTest {
+        val persistence = FakePersistence
+        val repository = PersistenceRepositoryDelegate(Json, persistence)
+        repository.open(
+            url = "http://<test-token>",
+            token = "<test-token>",
+            database = ":memory:"
+        )
+        repository.synchronise()
+        assertEquals(persistence.isSynchronized, true)
+    }
+
+    @Test
+    fun `test close database`() = testScope.runTest {
+        val persistence = FakePersistence
+        val repository = PersistenceRepositoryDelegate(Json, persistence)
+        repository.open(
+            url = "http://<test-token>",
+            token = "<test-token>",
+            database = ":memory:"
+        )
+        repository.close()
+        assertEquals(persistence.isDisconnected, true)
     }
 
     @Serializable

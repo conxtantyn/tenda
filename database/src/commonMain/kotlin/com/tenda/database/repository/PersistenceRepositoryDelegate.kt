@@ -7,16 +7,23 @@ import com.tenda.persistence.core.repository.PersistenceRepository
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
-import uniffi.database.Persistence
+import uniffi.database.Credential
+import uniffi.database.PersistenceInterface
 import kotlin.reflect.KClass
 
 @OptIn(InternalSerializationApi::class)
 class PersistenceRepositoryDelegate(
     private val json: Json,
-    private val persistence: Persistence
+    private val persistence: PersistenceInterface
 ) : PersistenceRepository {
-    override suspend fun open(database: String) {
-        return persistence.connect(database)
+    override fun open(url: String, token: String, database: String) {
+        return persistence.connect(
+            Credential(
+                url = url,
+                token = token,
+                database = database
+            )
+        )
     }
 
     override suspend fun execute(sql: String, params: List<Any?>): String {
@@ -43,7 +50,11 @@ class PersistenceRepositoryDelegate(
         )
     }
 
-    override suspend fun close() {
+    override suspend fun synchronise() {
+        return persistence.synchronise()
+    }
+
+    override fun close() {
         return persistence.disconnect()
     }
 }
