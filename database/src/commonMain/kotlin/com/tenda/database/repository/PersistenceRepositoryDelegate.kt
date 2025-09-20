@@ -23,10 +23,14 @@ class PersistenceRepositoryDelegate(
         return persistence.execute(sql, params.mapFromDomain())
     }
 
+    override suspend fun <T : Any> execute(sql: String, kClass: KClass<T>): Response<T> {
+        return execute(sql, emptyList(), kClass)
+    }
+
     override suspend fun <T : Any> execute(
         sql: String,
-        kClass: KClass<T>,
-        params: List<Any?>
+        params: List<Any?>,
+        kClass: KClass<T>
     ): Response<T> {
         val content = persistence.execute(sql, params.mapFromDomain())
         val response = json.decodeFromString<ResponseModel>( content)
