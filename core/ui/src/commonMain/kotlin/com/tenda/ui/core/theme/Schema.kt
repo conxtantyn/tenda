@@ -1,0 +1,61 @@
+package com.tenda.ui.core.theme
+
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.ui.graphics.Color.Companion.White
+
+internal val LightColorScheme = lightColorScheme(
+    primary = Primary300,
+    onPrimary = White,
+    primaryContainer = Primary100,
+    onPrimaryContainer = Primary700,
+    secondary = Secondary300,
+    onSecondary = White,
+    secondaryContainer = Secondary100,
+    onSecondaryContainer = Secondary700,
+    tertiary = Tertiary300,
+    onTertiary = White,
+    tertiaryContainer = Tertiary100,
+    onTertiaryContainer = Tertiary700,
+    background = White,
+    onBackground = Gray700,
+    surface = White,
+    onSurface = Gray700,
+    surfaceVariant = Gray100,
+    onSurfaceVariant = Gray600,
+    surfaceDim = Gray50,
+    outline = Gray300,
+    outlineVariant = Gray200,
+    inverseSurface = Gray700,
+    inverseOnSurface = Gray100,
+    inversePrimary = Primary100,
+    surfaceTint = Primary300,
+)
+
+internal val DarkColorScheme = darkColorScheme(
+    primary = Primary200,
+    onPrimary = Primary700,
+    primaryContainer = Primary600,
+    onPrimaryContainer = Primary100,
+    secondary = Secondary200,
+    onSecondary = Secondary700,
+    secondaryContainer = Secondary600,
+    onSecondaryContainer = Secondary100,
+    tertiary = Tertiary200,
+    onTertiary = Tertiary700,
+    tertiaryContainer = Tertiary600,
+    onTertiaryContainer = Tertiary100,
+    background = Gray700,
+    onBackground = Gray100,
+    surface = Gray700,
+    onSurface = Gray100,
+    surfaceVariant = Gray600,
+    onSurfaceVariant = Gray200,
+    surfaceDim = Gray650,
+    outline = Gray400,
+    outlineVariant = Gray500,
+    inverseSurface = Gray100,
+    inverseOnSurface = Gray700,
+    inversePrimary = Primary400,
+    surfaceTint = Primary200,
+)

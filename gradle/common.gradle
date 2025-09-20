@@ -1,0 +1,69 @@
+def properties = new Properties()
+def isAndroid = ext.has('android') && (ext.get('android') as List<String>).contains(path)
+def isComposable = ext.has('composable') && (ext.get('composable') as List<String>).contains(path)
+
+apply plugin: libs.plugins.ksp.get().pluginId
+
+if (isAndroid) {
+    apply plugin: libs.plugins.androidApplication.get().pluginId
+    apply plugin: libs.plugins.kotlinMultiplatform.get().pluginId
+    apply plugin: libs.plugins.composeMultiplatform.get().pluginId
+    apply plugin: libs.plugins.composeCompiler.get().pluginId
+} else if (isComposable) {
+    apply plugin: libs.plugins.androidLibrary.get().pluginId
+    apply plugin: libs.plugins.composeMultiplatform.get().pluginId
+    apply plugin: libs.plugins.kotlinMultiplatform.get().pluginId
+    apply plugin: libs.plugins.composeCompiler.get().pluginId
+} else {
+    apply plugin: libs.plugins.androidLibrary.get().pluginId
+    apply plugin: libs.plugins.kotlinMultiplatform.get().pluginId
+}
+properties.load(rootProject.file("gradle.properties").newDataInputStream())
+
+def domain = properties.getProperty("app.namespace")
+if (domain == null) {
+    throw RuntimeException("Base application namespace not defined in $rootDir/gradle.properties")
+}
+
+android {
+    namespace = "$domain${path.replace(':', '.')}"
+    compileSdk = libs.versions.android.compileSdk.get().toInteger()
+
+    defaultConfig {
+        if (isAndroid) {
+            applicationId = "$domain${path.replace(':', '.')}"
+        }
+        minSdk = libs.versions.android.minSdk.get().toInteger()
+        targetSdk = libs.versions.android.targetSdk.get().toInteger()
+    }
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+}
+
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            kotlin.sourceSets.getByName("commonMain").kotlin.srcDir(
+                    "build/generated/ksp/metadata/commonMain/kotlin"
+            )
+        }
+    }
+}
+
+dependencies {
+    add("ksp", libs.koin.compiler)
+    add("kspCommonMainMetadata", libs.koin.compiler)
+}
+
+tasks.register("generateDepencencyMain") {
+    group = "build"
+    description = "Runs KSP on commonMain metadata"
+    dependsOn("kspCommonMainKotlinMetadata")
+}
