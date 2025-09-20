@@ -1,11 +1,11 @@
-use std::sync::{ Arc, Mutex };
-use libsql::{ Database, Value as LibSqlValue, Error as LibSqlError };
+use libsql::{ Database };
 use serde_json::{ json, Value as JsonValue };
+use std::sync::{ Arc, Mutex };
 
+use crate::datasource::persistence::Persistence;
+use crate::mapper::entry_mapper::EntryMapper;
+use crate::mapper::json_mapper::JsonMapper;
 use crate::model::entry::Entry;
-use crate::mapper::json::JsonMapper;
-use crate::mapper::entry::EntryMapper;
-use crate::datasource::core::persistence::Persistence;
 
 #[uniffi::export]
 impl Persistence {
@@ -44,7 +44,7 @@ impl Persistence {
     ) -> String {
         let conn_guard = self.connection.lock().unwrap();
         let conn = conn_guard.as_ref().expect("Not connected to database");
-        let mut params = args.from_domain();
+        let params = args.from_domain();
         self.runtime.block_on(async {
             if sql.trim().to_uppercase().starts_with("SELECT") {
                 let mut rows = conn.query(&sql, params).await.unwrap();

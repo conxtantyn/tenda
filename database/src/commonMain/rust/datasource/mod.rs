@@ -1,5 +1,5 @@
-pub mod core;
-pub mod delegate;
+pub mod persistence;
+pub mod persistence_delegate;
 
-pub use core::*;
-pub use delegate::*;
+pub use persistence::*;
+pub use persistence_delegate::*;

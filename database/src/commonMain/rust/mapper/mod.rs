@@ -1,4 +1,5 @@
-pub mod json;
-pub mod entry;
+pub mod json_mapper;
+pub mod entry_mapper;
 
-pub use json::*;
+pub use json_mapper::*;
+pub use entry_mapper::*;
