@@ -129,6 +129,16 @@ class PersistenceRepositoryDelegateTest {
     }
 
     @Test
+    fun `test database error`() = testScope.runTest {
+        val result = try {
+            repository.synchronise()
+        } catch (_: Throwable) {
+            null
+        }
+        assertEquals(result, null)
+    }
+
+    @Test
     fun `test close database`() = testScope.runTest {
         val persistence = FakePersistence
         val repository = PersistenceRepositoryDelegate(Json, persistence)

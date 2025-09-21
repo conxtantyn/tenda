@@ -1,11 +1,10 @@
 use libsql::{ Database };
-use serde_json::{ json, Value as JsonValue };
-use std::sync::{ Arc, Mutex };
+use std::sync::{ Arc, RwLock };
 
+use crate::persistence_error;
 use crate::datasource::persistence::Persistence;
-use crate::exception::persistence_exception::PersistenceException;
-use crate::mapper::entry_mapper::EntryMapper;
-use crate::mapper::json_mapper::JsonMapper;
+use crate::exception::throwable::Throwable;
+use crate::extension::persistence_query::PersistenceQuery;
 use crate::model::entry::Entry;
 use crate::model::credential::Credential;
 
@@ -16,48 +15,25 @@ impl Persistence {
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
-            .unwrap_or_else(|e| {
-                panic!("{}",
-                    json!({
-                        "status": PersistenceException::INITIALIZATION_EXCEPTION,
-                        "reason": e.to_string(),
-                    }).to_string()
-                )
-            });
+            .unwrap_or_panic(persistence_error!(init));
         Arc::new(Self {
-            credential: Mutex::new(None),
-            db: Mutex::new(None),
-            connection: Mutex::new(None),
+            credential: RwLock::new(None),
+            db: RwLock::new(None),
+            connection: RwLock::new(None),
             runtime,
         })
     }
 
     pub fn connect(&self, credential: Credential) {
-        let mut cred_guard = self.credential.lock().unwrap();
-        let mut db_guard = self.db.lock().unwrap();
-        let mut conn_guard = self.connection.lock().unwrap();
+        let mut cred_guard = self.credential.write().unwrap();
+        let mut db_guard = self.db.write().unwrap();
+        let mut conn_guard = self.connection.write().unwrap();
 
         *conn_guard = None;
         *db_guard = None;
 
-        let db = Database::open(&credential.database)
-            .unwrap_or_else(|e| {
-                panic!("{}",
-                    json!({
-                        "status": PersistenceException::OPEN_EXCEPTION,
-                        "reason": e.to_string(),
-                    }).to_string()
-                )
-            });
-        let conn = db.connect()
-            .unwrap_or_else(|e| {
-                panic!("{}",
-                    json!({
-                        "status": PersistenceException::CONNECTION_EXCEPTION,
-                        "reason": e.to_string(),
-                    }).to_string()
-                )
-            });
+        let db = Database::open(&credential.database).unwrap_or_panic(persistence_error!(open));
+        let conn = db.connect().unwrap_or_panic(persistence_error!(connection));
 
         *cred_guard = Some(credential);
         *db_guard = Some(Arc::new(db));
@@ -65,82 +41,37 @@ impl Persistence {
     }
 
     /// Execute a SQL query and return the results
+    /// (wrapper function for backward compatibility)
     pub async fn execute(
         &self,
         sql: String,
         args: Vec<Entry>
     ) -> String {
-        let conn_guard = self.connection.lock().unwrap();
-        let conn = conn_guard.as_ref()
-            .unwrap_or_else(|| {
-                panic!("{}",
-                    json!({
-                        "status": PersistenceException::QUERY_EXCEPTION,
-                        "reason": "No connection found",
-                    }).to_string()
-                )
-            });
-        let params = args.from_domain();
-        self.runtime.block_on(async {
-            if sql.trim().to_uppercase().starts_with("SELECT") {
-                let mut rows = conn.query(&sql, params).await.unwrap();
-                let mut results = Vec::new();
-                while let Some(row) = rows.next().await.unwrap() {
-                    let mut row_data = serde_json::Map::new();
-                    for i in 0..row.column_count() {
-                        let column_name = row.column_name(i).unwrap_or("").to_string();
-                        row_data.insert(column_name, row.get_value(i).unwrap().to_json());
-                    }
-                    results.push(JsonValue::Object(row_data));
-                }
-                json!({ "changes": 0, "data": results }).to_string()
-            } else {
-                let affected_rows = conn.execute(&sql, params).await.unwrap();
-                json!({ "changes": affected_rows, "data": [] }).to_string()
-            }
-        })
+        if sql.trim().to_uppercase().starts_with("SELECT") {
+            self.get(sql, args).await
+        } else {
+            self.post(sql, args).await
+        }
     }
 
     pub async fn synchronise(&self) {
-        let conn_guard = self.credential.lock().unwrap();
-        let credential = conn_guard.as_ref()
-            .unwrap_or_else(|| {
-                panic!("{}",
-                    json!({
-                        "status": PersistenceException::CREDENTIAL_EXCEPTION,
-                        "reason": "No credential found",
-                    }).to_string()
-                )
-            });
+        let conn_guard = self.credential.read().unwrap();
+        let credential = conn_guard.as_ref().expect_or_panic(persistence_error!(credential));
         let client = Database::open_remote(
             credential.url.clone(),
             credential.token.clone()
-        ).unwrap_or_else(|e| {
-             panic!("{}",
-                 json!({
-                     "status": PersistenceException::REMOTE_CONNECTION_EXCEPTION,
-                     "reason": e.to_string(),
-                 }).to_string()
-             )
-         });
+        ).unwrap_or_panic(persistence_error!(connection));
         self.runtime.block_on(async {
             client.sync()
                 .await
-                .unwrap_or_else(|e| {
-                     panic!("{}",
-                         json!({
-                             "status": PersistenceException::SYNC_EXCEPTION,
-                             "reason": e.to_string(),
-                         }).to_string()
-                     )
-                 });
+                .unwrap_or_panic(persistence_error!(sync));
         });
     }
 
     pub fn disconnect(&self) {
-        let mut cred_guard = self.credential.lock().unwrap();
-        let mut db_guard = self.db.lock().unwrap();
-        let mut conn_guard = self.connection.lock().unwrap();
+        let mut cred_guard = self.credential.write().unwrap();
+        let mut db_guard = self.db.write().unwrap();
+        let mut conn_guard = self.connection.write().unwrap();
 
         *cred_guard = None;
         *conn_guard = None;
