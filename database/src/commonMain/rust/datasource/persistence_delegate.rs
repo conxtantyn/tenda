@@ -16,7 +16,14 @@ impl Persistence {
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
-            .expect(PersistenceException::INITIALIZATION_EXCEPTION);
+            .unwrap_or_else(|e| {
+                panic!("{}",
+                    json!({
+                        "status": PersistenceException::INITIALIZATION_EXCEPTION,
+                        "reason": e.to_string(),
+                    }).to_string()
+                )
+            });
         Arc::new(Self {
             credential: Mutex::new(None),
             db: Mutex::new(None),
@@ -33,8 +40,24 @@ impl Persistence {
         *conn_guard = None;
         *db_guard = None;
 
-        let db = Database::open(&credential.database).expect(PersistenceException::OPEN_EXCEPTION);
-        let conn = db.connect().expect(PersistenceException::CONNECTION_EXCEPTION);
+        let db = Database::open(&credential.database)
+            .unwrap_or_else(|e| {
+                panic!("{}",
+                    json!({
+                        "status": PersistenceException::OPEN_EXCEPTION,
+                        "reason": e.to_string(),
+                    }).to_string()
+                )
+            });
+        let conn = db.connect()
+            .unwrap_or_else(|e| {
+                panic!("{}",
+                    json!({
+                        "status": PersistenceException::CONNECTION_EXCEPTION,
+                        "reason": e.to_string(),
+                    }).to_string()
+                )
+            });
 
         *cred_guard = Some(credential);
         *db_guard = Some(Arc::new(db));
@@ -48,7 +71,15 @@ impl Persistence {
         args: Vec<Entry>
     ) -> String {
         let conn_guard = self.connection.lock().unwrap();
-        let conn = conn_guard.as_ref().expect(PersistenceException::QUERY_EXCEPTION);
+        let conn = conn_guard.as_ref()
+            .unwrap_or_else(|| {
+                panic!("{}",
+                    json!({
+                        "status": PersistenceException::QUERY_EXCEPTION,
+                        "reason": "No connection found",
+                    }).to_string()
+                )
+            });
         let params = args.from_domain();
         self.runtime.block_on(async {
             if sql.trim().to_uppercase().starts_with("SELECT") {
@@ -72,15 +103,37 @@ impl Persistence {
 
     pub async fn synchronise(&self) {
         let conn_guard = self.credential.lock().unwrap();
-        let credential = conn_guard.as_ref().expect(PersistenceException::CREDENTIAL_EXCEPTION);
+        let credential = conn_guard.as_ref()
+            .unwrap_or_else(|| {
+                panic!("{}",
+                    json!({
+                        "status": PersistenceException::CREDENTIAL_EXCEPTION,
+                        "reason": "No credential found",
+                    }).to_string()
+                )
+            });
         let client = Database::open_remote(
             credential.url.clone(),
             credential.token.clone()
-        ).expect(PersistenceException::REMOTE_CONNECTION_EXCEPTION);
+        ).unwrap_or_else(|e| {
+             panic!("{}",
+                 json!({
+                     "status": PersistenceException::REMOTE_CONNECTION_EXCEPTION,
+                     "reason": e.to_string(),
+                 }).to_string()
+             )
+         });
         self.runtime.block_on(async {
             client.sync()
                 .await
-                .expect(PersistenceException::SYNC_EXCEPTION);
+                .unwrap_or_else(|e| {
+                     panic!("{}",
+                         json!({
+                             "status": PersistenceException::SYNC_EXCEPTION,
+                             "reason": e.to_string(),
+                         }).to_string()
+                     )
+                 });
         });
     }
 
