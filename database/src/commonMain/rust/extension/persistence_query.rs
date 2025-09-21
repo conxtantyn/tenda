@@ -20,7 +20,7 @@ impl PersistenceQuery for Persistence {
         args: Vec<Entry>
     ) -> String {
         let conn_guard = self.connection.read().unwrap();
-        let conn = conn_guard.as_ref().unwrap_or_panic(persistence_error!(query));
+        let conn = conn_guard.as_ref().unwrap_or_panic(persistence_error!(connection));
         let params = args.from_domain();
         self.runtime.block_on(async {
             let mut rows = conn.query(&sql, params).await.unwrap();
@@ -45,7 +45,7 @@ impl PersistenceQuery for Persistence {
         args: Vec<Entry>
     ) -> String {
         let conn_guard = self.connection.read().unwrap();
-        let conn = conn_guard.as_ref().unwrap_or_panic(persistence_error!(query));
+        let conn = conn_guard.as_ref().unwrap_or_panic(persistence_error!(connection));
         let params = args.from_domain();
         self.runtime.block_on(async {
             let affected_rows = conn.execute(&sql, params).await.unwrap();

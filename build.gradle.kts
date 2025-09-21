@@ -13,7 +13,10 @@ plugins {
 
 subprojects {
     ext.set("android", listOf(":app"))
-    ext.set("composable", listOf(":core:ui"))
+    ext.set("composable", listOf(
+        ":core:ui",
+        ":feature:contact:ui",
+    ))
     beforeEvaluate {
         project(path) {
             apply("$rootDir/gradle/common.gradle")

@@ -38,6 +38,12 @@ class ContactRepositoryDelegateTest {
     }
 
     @Test
+    fun `get initialize persistence`() = testScope.runTest {
+        repository.initialize()
+        assertTrue("initialize" in persistence.calledMethods)
+    }
+
+    @Test
     fun `get delegates to persistence`() = testScope.runTest {
         val expected = Contact(
             id = "1",

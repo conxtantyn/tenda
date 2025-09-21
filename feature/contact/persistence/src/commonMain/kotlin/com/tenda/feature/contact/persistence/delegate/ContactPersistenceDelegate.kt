@@ -16,10 +16,11 @@ class ContactPersistenceDelegate(
     override suspend fun initialize() {
         repository.execute("""
             CREATE TABLE IF NOT EXISTS contacts (
-                id TEXT PRIMARY KEY,
+                id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
                 name TEXT NOT NULL,
-                logo TEXT NOT NULL
-            )
+                logo TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+            );
         """.trimIndent())
     }
 
@@ -36,7 +37,9 @@ class ContactPersistenceDelegate(
     override suspend fun getAll(paging: Paging.Request): Paging.Response<Contact> {
         val response = repository.execute(
             sql = """
-                SELECT * FROM contacts LIMIT ? OFFSET ?
+                SELECT * FROM contacts 
+                ORDER BY created_at DESC 
+                LIMIT ? OFFSET ?;
             """.trimIndent(),
             params = listOf(paging.size, paging.index),
             type = ContactModel::class

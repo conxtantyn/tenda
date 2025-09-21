@@ -1,11 +1,12 @@
 package com.tenda.ui.main
 
+import com.tenda.ui.setup.Setup
 import com.tenda.module.TendaModule
 import com.tenda.ui.core.component.UiComponent
 import com.tenda.ui.core.component.UiComponentProvider
 import com.tenda.ui.core.factory.UiBuilderFactory
 import com.tenda.ui.home.Home
-import com.tenda.ui.setup.Setup
+import com.tenda.ui.setup.SetupEvent
 import org.koin.core.annotation.Module
 import org.koin.core.qualifier.named
 import org.koin.core.scope.Scope
@@ -14,12 +15,18 @@ import org.koin.ksp.generated.module
 
 @Module
 object Main {
+    @org.koin.core.annotation.Scope(Main::class)
+    fun provideMainInteractor(): MainInteractor {
+        return MainInteractor()
+    }
+
     class Builder(scope: Scope): UiComponent.ComponentBuilder(scope) {
         override fun build(): Scope {
             val scope = scope(named<Main>())
             scope.getKoin().loadModules(listOf(
                 module {
                     scope<Main> {
+                        factory<SetupEvent> { get<MainInteractor>() }
                         factory<UiComponentProvider.Factory> {
                             UiBuilderFactory(
                                 listOf(

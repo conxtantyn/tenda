@@ -1,48 +1,44 @@
-package com.tenda.ui.setup
+package com.tenda.feature.contact.ui.draft
 
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import com.tenda.usecase.InitializeUsecase
+import com.tenda.feature.contact.domain.usecase.CreateDraftUsecase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class SetupViewModel(
-    private val usecase: InitializeUsecase
+class DraftViewModel(
+    private val usecase: CreateDraftUsecase
 ) : ScreenModel {
-    private val scope = screenModelScope
+    private val scope = this.screenModelScope
 
     private val _state = MutableStateFlow<State>(State.Default)
 
     val state: StateFlow<State> = _state.asStateFlow()
 
-    fun initialize(
-        url: String,
-        token: String,
-        database: String
-    ) {
+    fun create(name: String) {
         scope.launch {
             try {
                 _state.value = State.Loading
-                usecase(
-                    InitializeUsecase.Argument(
-                        url = url,
-                        token = token,
-                        database = database
-                    )
-                )
-                _state.value = State.Initialized
+                usecase(name)
+                _state.value = State.Success
             } catch (error: Throwable) {
                 _state.emit(State.Error(error))
             }
         }
     }
 
+    fun reset() {
+        scope.launch {
+            _state.value = State.Default
+        }
+    }
+
     sealed interface State {
         data object Default : State
         data object Loading : State
-        data object Initialized : State
+        data object Success : State
 
         data class Error(val error: Throwable) : State
     }

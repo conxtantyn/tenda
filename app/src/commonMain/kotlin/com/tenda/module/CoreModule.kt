@@ -7,5 +7,7 @@ import org.koin.core.annotation.Single
 @Module
 class CoreModule {
     @Single
-    fun provideJson(): Json = Json
+    fun provideJson(): Json = Json {
+        ignoreUnknownKeys = true
+    }
 }

@@ -11,6 +11,10 @@ interface UiComponent {
     abstract class Interactor {
         protected lateinit var scope: Scope
 
+        open fun onAttach() {}
+    }
+
+    abstract class ScreenInteractor : Interactor() {
         protected lateinit var navigator: Navigator
 
         fun attach(scope: Scope, navigator: Navigator) {
@@ -18,8 +22,16 @@ interface UiComponent {
             this.navigator = navigator
             onAttach()
         }
+    }
 
-        open fun onAttach() {}
+    abstract class ScreenInteractorWithArgs<T : Any> : Interactor() {
+        protected lateinit var args: T
+
+        fun attach(scope: Scope, args: T) {
+            this.args = args
+            this.scope = scope
+            onAttach()
+        }
     }
 
     abstract class ComponentBuilder(private val scope: Scope) : Builder {

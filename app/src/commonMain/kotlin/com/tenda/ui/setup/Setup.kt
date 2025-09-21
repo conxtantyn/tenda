@@ -3,7 +3,7 @@ package com.tenda.ui.setup
 import com.tenda.ui.core.component.UiComponent
 import com.tenda.ui.core.component.UiComponentProvider
 import com.tenda.ui.core.factory.UiBuilderFactory
-import com.tenda.usecase.PersistenceInitUsecase
+import com.tenda.usecase.InitializeUsecase
 import org.koin.core.annotation.Module
 import org.koin.core.qualifier.named
 import org.koin.core.scope.Scope
@@ -13,7 +13,7 @@ import org.koin.ksp.generated.module
 @Module
 object Setup {
     @org.koin.core.annotation.Scope(Setup::class)
-    fun provideSetupViewModel(usecase: PersistenceInitUsecase): SetupViewModel {
+    fun provideSettingsViewModel(usecase: InitializeUsecase): SetupViewModel {
         return SetupViewModel(usecase)
     }
 

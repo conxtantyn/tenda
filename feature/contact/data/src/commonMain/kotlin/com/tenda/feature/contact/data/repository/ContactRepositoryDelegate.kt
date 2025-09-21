@@ -11,6 +11,10 @@ import org.koin.core.annotation.Single
 class ContactRepositoryDelegate(
     private val persistence: ContactPersistence
 ) : ContactRepository {
+    override suspend fun initialize() {
+        return persistence.initialize()
+    }
+
     override suspend fun get(id: String): Contact {
         return persistence.get(id)
     }

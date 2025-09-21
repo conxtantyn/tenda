@@ -4,6 +4,7 @@ import com.tenda.database.DatabaseModule
 import com.tenda.feature.contact.data.ContactDataModule
 import com.tenda.feature.contact.domain.ContactModule
 import com.tenda.feature.contact.persistence.ContactPersistentModule
+import com.tenda.persistence.core.PersistenceModule
 import org.koin.core.annotation.ComponentScan
 import org.koin.core.annotation.Module
 
@@ -11,12 +12,11 @@ import org.koin.core.annotation.Module
     includes = [
         CoreModule::class,
         DatabaseModule::class,
+        PersistenceModule::class,
         ContactPersistentModule::class,
         ContactDataModule::class,
         ContactModule::class
     ]
 )
-@ComponentScan(value = [
-    "com.tenda.usecase",
-])
+@ComponentScan("com.tenda.usecase")
 object TendaModule

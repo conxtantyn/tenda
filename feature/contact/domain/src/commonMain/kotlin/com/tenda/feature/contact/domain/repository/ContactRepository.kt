@@ -5,6 +5,8 @@ import com.tenda.feature.contact.domain.model.Contact
 import com.tenda.feature.contact.domain.model.ContactDetail
 
 interface ContactRepository {
+    suspend fun initialize()
+
     suspend fun get(id: String): Contact
 
     suspend fun getAll(paging: Paging.Request): Paging.Response<Contact>
