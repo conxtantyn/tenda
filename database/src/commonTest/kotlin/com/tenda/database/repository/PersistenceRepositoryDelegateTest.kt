@@ -1,6 +1,6 @@
 package com.tenda.database.repository
 
-import com.tenda.database.mock.FakePersistence
+import com.tenda.database.faker.FakePersistence
 import com.tenda.persistence.core.repository.PersistenceRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -17,6 +17,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PersistenceRepositoryDelegateTest {
@@ -125,14 +126,17 @@ class PersistenceRepositoryDelegateTest {
             database = ":memory:"
         )
         repository.synchronise()
-        assertEquals(persistence.isSynchronized, true)
+        assertTrue(persistence.calls.any {
+            it.startsWith("synchronise")
+        })
     }
 
     @Test
     fun `test database error`() = testScope.runTest {
         val result = try {
             repository.synchronise()
-        } catch (_: Throwable) {
+        } catch (error: Throwable) {
+            error.printStackTrace()
             null
         }
         assertEquals(result, null)
@@ -148,7 +152,9 @@ class PersistenceRepositoryDelegateTest {
             database = ":memory:"
         )
         repository.close()
-        assertEquals(persistence.isDisconnected, true)
+        assertTrue(persistence.calls.any {
+            it.startsWith("disconnect")
+        })
     }
 
     @Serializable

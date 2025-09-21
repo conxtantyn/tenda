@@ -34,4 +34,9 @@ include(":core:ui")
 
 include(":database")
 
+include(":feature:contact:domain")
+include(":feature:contact:data")
+include(":feature:contact:persistence")
+include(":feature:contact:ui")
+
 include(":app")

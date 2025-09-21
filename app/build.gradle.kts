@@ -43,7 +43,15 @@ kotlin {
 
             implementation(project(":database"))
 
+            implementation(project(":feature:contact:domain"))
+            implementation(project(":feature:contact:data"))
+            implementation(project(":feature:contact:persistence"))
+            implementation(project(":feature:contact:ui"))
+
             implementation(compose.components.resources)
+
+            implementation(libs.koin.core)
+            implementation(libs.koin.annotation)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

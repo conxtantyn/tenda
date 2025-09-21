@@ -23,6 +23,9 @@ kotlin {
                 implementation(project(":core:common"))
                 implementation(project(":core:persistence"))
                 kotlin.srcDir("build/generated/uniffi/commonMain/kotlin")
+
+                implementation(libs.koin.core)
+                implementation(libs.koin.annotation)
             }
         }
         commonTest.dependencies {
