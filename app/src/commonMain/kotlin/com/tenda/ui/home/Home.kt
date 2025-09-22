@@ -3,6 +3,7 @@ package com.tenda.ui.home
 import com.tenda.feature.contact.ui.contacts.Contacts
 import com.tenda.feature.contact.ui.draft.Draft
 import com.tenda.feature.contact.ui.draft.DraftEvent
+import com.tenda.persistence.core.usecase.SynchroniseUsecase
 import com.tenda.ui.core.component.UiComponent
 import com.tenda.ui.core.component.UiComponentProvider
 import com.tenda.ui.core.factory.UiBuilderFactory
@@ -17,6 +18,11 @@ object Home {
     @org.koin.core.annotation.Scope(Home::class)
     fun provideHomeInteractor(): HomeInteractor {
         return HomeInteractor()
+    }
+
+    @org.koin.core.annotation.Scope(Home::class)
+    fun provideHomeViewModel(usecase: SynchroniseUsecase): HomeViewModel {
+        return HomeViewModel(usecase)
     }
 
     class Builder(scope: Scope): UiComponent.ComponentBuilder(scope) {

@@ -48,7 +48,7 @@ class ContactsScreen(val scope: ScopeID) : Screen {
                     offset = 0,
                     limit = 100
                 ))
-                delay(300)
+                delay(600)
             }
         }
     }

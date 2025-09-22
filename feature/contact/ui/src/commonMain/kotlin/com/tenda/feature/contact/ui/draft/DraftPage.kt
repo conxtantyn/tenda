@@ -75,16 +75,14 @@ fun DraftPage(
                 onClick = {
                     handleOnSave(name.text.toString())
                 },
-                modifier = Modifier.padding(top = 12.dp)
-            ) {
-                Text("Save")
-            }
+                modifier = Modifier.weight(1f)
+                    .padding(top = 12.dp)
+            ) { Text("Save") }
             DesignButton(
                 onClick = onDismiss,
-                modifier = Modifier.padding(top = 12.dp)
-            ) {
-                Text("Close")
-            }
+                modifier = Modifier.weight(1f)
+                    .padding(top = 12.dp)
+            ) { Text("Close") }
         }
     }
 }
