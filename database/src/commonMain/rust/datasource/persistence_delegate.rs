@@ -1,5 +1,6 @@
-use libsql::{ Database };
+use libsql::{ Database, Builder };
 use std::sync::{ Arc, RwLock };
+use hyper_rustls::HttpsConnectorBuilder;
 
 use crate::persistence_error;
 use crate::datasource::persistence::Persistence;
@@ -57,12 +58,21 @@ impl Persistence {
     pub async fn synchronise(&self) {
         let conn_guard = self.credential.read().unwrap();
         let credential = conn_guard.as_ref().expect_or_panic(persistence_error!(credential));
-        let client = Database::open_remote(
+        let https = HttpsConnectorBuilder::new()
+            .with_webpki_roots()
+            .https_or_http()
+            .enable_http1()
+            .build();
+        let client = Builder::new_remote_replica(
+            credential.database.clone(),
             credential.url.clone(),
             credential.token.clone()
-        ).unwrap_or_panic(persistence_error!(connection));
+        ).connector(https)
+        .build();
         self.runtime.block_on(async {
-            client.sync()
+            client.await
+                .unwrap_or_panic(persistence_error!(sync))
+                .sync()
                 .await
                 .unwrap_or_panic(persistence_error!(sync));
         });
