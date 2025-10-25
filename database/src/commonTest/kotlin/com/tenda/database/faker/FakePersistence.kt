@@ -12,7 +12,7 @@ object FakePersistence : PersistenceInterface {
     var executeResult: String = """{"changes":0,"data":[]}"""
     private val sqlResults: MutableMap<String, String> = mutableMapOf()
 
-    override fun connect(credential: Credential) {
+    override suspend fun connect(credential: Credential) {
         calls.add("connect:${credential.database}@${credential.token}")
     }
 

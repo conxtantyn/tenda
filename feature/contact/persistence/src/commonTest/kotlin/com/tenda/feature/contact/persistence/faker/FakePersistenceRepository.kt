@@ -17,7 +17,7 @@ class FakePersistenceRepository : PersistenceRepository {
     var executeStringResult: String = ""
     var executeTypedResult: Response<*>? = null
 
-    override fun open(url: String, token: String, database: String) {
+    override suspend fun open(url: String, token: String, database: String) {
         called.add("open:$url:$token:$database")
     }
 

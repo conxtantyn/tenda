@@ -4,7 +4,7 @@ import com.tenda.persistence.core.model.Response
 import kotlin.reflect.KClass
 
 interface PersistenceRepository {
-    fun open(
+    suspend fun open(
         url: String,
         token: String,
         database: String,

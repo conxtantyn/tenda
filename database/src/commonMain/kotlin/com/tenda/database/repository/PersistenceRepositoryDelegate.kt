@@ -19,7 +19,7 @@ class PersistenceRepositoryDelegate(
     private val json: Json,
     private val persistence: PersistenceInterface
 ) : PersistenceRepository, ExceptionHandler by ExceptionHandler.Delegate(json) {
-    override fun open(url: String, token: String, database: String) = run {
+    override suspend fun open(url: String, token: String, database: String) = launch {
         persistence.connect(
             Credential(
                 url = url,

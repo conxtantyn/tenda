@@ -3,6 +3,8 @@ package com.tenda.ui.setup
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.tenda.usecase.InitializeUsecase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,7 +24,7 @@ class SetupViewModel(
         token: String,
         database: String
     ) {
-        scope.launch {
+        scope.launch(Dispatchers.IO) {
             try {
                 _state.value = State.Loading
                 usecase(
