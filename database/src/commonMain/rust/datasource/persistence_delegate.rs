@@ -32,19 +32,21 @@ impl Persistence {
             *db_guard = None;
             *cred_guard = None;
         }
+        self.handleSynchronise(credential.clone());
         let https = HttpsConnectorBuilder::new()
             .with_webpki_roots()
             .https_or_http()
             .enable_http1()
             .build();
-        let client = Builder::new_remote_replica(
-            credential.database.clone(),
-            credential.url.clone(),
-            credential.token.clone()
-        ).connector(https)
-        .build();
         let (arc_db, conn) = self.runtime.block_on(async {
-            let db = client.await.unwrap_or_panic(persistence_error!(sync));
+            let db = Builder::new_synced_database(
+                credential.database.clone(),
+                credential.url.clone(),
+                credential.token.clone()
+            ).connector(https)
+                .build()
+                .await
+                .unwrap_or_panic(persistence_error!(open));
             let arc_db = Arc::new(db);
             let conn = arc_db.connect().unwrap_or_panic(persistence_error!(connection));
             (arc_db, conn)
@@ -61,7 +63,7 @@ impl Persistence {
 
     /// Execute a SQL query and return the results
     /// (wrapper function for backward compatibility)
-    pub async fn execute(
+    pub fn execute(
         &self,
         sql: String,
         args: Vec<Entry>
@@ -75,10 +77,25 @@ impl Persistence {
         })
     }
 
-    pub async fn synchronise(&self) {
-        let db_guard = self.db.read().unwrap();
-        let db = db_guard.as_ref().expect_or_panic(persistence_error!(credential));
+    pub fn synchronise(&self) {
+        let cred_guard = self.credential.read().unwrap();
+        let credential = cred_guard.as_ref().expect_or_panic(persistence_error!(credential));
+        self.handleSynchronise(credential.clone());
+    }
+
+    fn handleSynchronise(&self, credential: Credential) {
+        let https = HttpsConnectorBuilder::new()
+            .with_webpki_roots()
+            .https_or_http()
+            .enable_http1()
+            .build();
+        let client = Builder::new_synced_database(
+            credential.database.clone(),
+            credential.url.clone(),
+            credential.token.clone()
+        ).connector(https).build();
         self.runtime.block_on(async {
+            let db = client.await.unwrap_or_panic(persistence_error!(sync));
             db.sync()
                 .await
                 .unwrap_or_panic(persistence_error!(sync));
